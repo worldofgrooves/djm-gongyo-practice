@@ -3,6 +3,12 @@
 import { useEffect, useRef, useCallback } from "react";
 import { gongyoTimestamps, timestampById } from "@/data/timestamps";
 import { getAllPracticeLineIds } from "@/data/gongyo";
+import { wordTimestamps } from "@/data/word-timestamps";
+
+export interface WordPosition {
+  lineId: string;
+  wordIndex: number;
+}
 
 interface AudioPlayerProps {
   selectedIds: Set<string>;
@@ -10,9 +16,10 @@ interface AudioPlayerProps {
   loopActive: boolean;
   playbackSpeed: number;
   onPlayingLineChange: (lineId: string | null) => void;
+  onWordPositionChange: (pos: WordPosition | null) => void;
   onPlaybackEnd: () => void;
   onAudioReady: (ready: boolean) => void;
-  playTrigger: number; // increment to start, set to 0 to stop
+  playTrigger: number;
 }
 
 export default function AudioPlayer({
@@ -21,6 +28,7 @@ export default function AudioPlayer({
   loopActive,
   playbackSpeed,
   onPlayingLineChange,
+  onWordPositionChange,
   onPlaybackEnd,
   onAudioReady,
   playTrigger,
@@ -30,10 +38,10 @@ export default function AudioPlayer({
   const loopStartRef = useRef<number | null>(null);
   const loopEndRef = useRef<number | null>(null);
   const lastLineRef = useRef<string | null>(null);
+  const lastWordIdxRef = useRef<number>(-1);
   const loopActiveRef = useRef(loopActive);
   const selectedIdsRef = useRef(selectedIds);
 
-  // Keep refs in sync
   useEffect(() => {
     loopActiveRef.current = loopActive;
   }, [loopActive]);
@@ -64,7 +72,6 @@ export default function AudioPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update playback speed
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackSpeed;
@@ -91,6 +98,8 @@ export default function AudioPlayer({
       if (loopEndRef.current && currentTime >= loopEndRef.current) {
         if (loopActiveRef.current && loopStartRef.current !== null) {
           audio.currentTime = loopStartRef.current;
+          lastLineRef.current = null;
+          lastWordIdxRef.current = -1;
           syncRef.current = requestAnimationFrame(tick);
           return;
         } else {
@@ -104,11 +113,44 @@ export default function AudioPlayer({
         (t) => currentTime >= t.start && currentTime < t.end
       );
 
-      if (activeTs && activeTs.id !== lastLineRef.current) {
+      if (activeTs) {
         const ordered = getOrderedLines();
         if (ordered.includes(activeTs.id)) {
-          lastLineRef.current = activeTs.id;
-          onPlayingLineChange(activeTs.id);
+          // Line changed?
+          if (activeTs.id !== lastLineRef.current) {
+            lastLineRef.current = activeTs.id;
+            lastWordIdxRef.current = -1;
+            onPlayingLineChange(activeTs.id);
+          }
+
+          // Word-level tracking
+          const lineWords = wordTimestamps[activeTs.id];
+          if (lineWords) {
+            let wordIdx = -1;
+            for (let i = 0; i < lineWords.length; i++) {
+              if (currentTime >= lineWords[i].start && currentTime < lineWords[i].end) {
+                wordIdx = i;
+                break;
+              }
+            }
+            // If between words, check if we're past the last matched
+            if (wordIdx === -1) {
+              for (let i = lineWords.length - 1; i >= 0; i--) {
+                if (currentTime >= lineWords[i].start) {
+                  wordIdx = i;
+                  break;
+                }
+              }
+            }
+
+            if (wordIdx !== lastWordIdxRef.current) {
+              lastWordIdxRef.current = wordIdx;
+              onWordPositionChange({
+                lineId: activeTs.id,
+                wordIndex: wordIdx,
+              });
+            }
+          }
         }
       }
 
@@ -116,7 +158,7 @@ export default function AudioPlayer({
     };
 
     syncRef.current = requestAnimationFrame(tick);
-  }, [onPlayingLineChange, onPlaybackEnd, getOrderedLines]);
+  }, [onPlayingLineChange, onWordPositionChange, onPlaybackEnd, getOrderedLines]);
 
   // Handle play/stop trigger
   useEffect(() => {
@@ -137,6 +179,7 @@ export default function AudioPlayer({
         audio.playbackRate = playbackSpeed;
         audio.play().catch(console.error);
         lastLineRef.current = null;
+        lastWordIdxRef.current = -1;
         startSync();
       }
     } else if (!isPlaying) {
@@ -148,10 +191,12 @@ export default function AudioPlayer({
       loopStartRef.current = null;
       loopEndRef.current = null;
       lastLineRef.current = null;
+      lastWordIdxRef.current = -1;
       onPlayingLineChange(null);
+      onWordPositionChange(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playTrigger, isPlaying]);
 
-  return null; // Audio is imperatively managed, no visual output
+  return null;
 }

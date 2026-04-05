@@ -48,3 +48,69 @@ html, body {
 .animate-slide-up {
   animation: slide-up 0.25s ease;
 }
+
+/* ── Karaoke word states ── */
+
+/* Upcoming word (not reached yet) */
+.word-upcoming {
+  color: #8a8078;
+  transition: color 0.15s ease;
+}
+
+/* Upcoming multi-syllable word (red warning -- heads-up) */
+.word-upcoming-multi {
+  color: #c0392b;
+  transition: color 0.15s ease;
+}
+
+/* Current word being chanted */
+.word-current {
+  color: #1a1612;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.1s ease;
+}
+
+/* Just-passed multi-syllable word (yellow -- these are hard) */
+.word-passed-multi {
+  color: #d4a017;
+  transition: color 0.2s ease;
+}
+
+/* Past single-syllable word (blue) */
+.word-passed {
+  color: #4a7fb5;
+  transition: color 0.2s ease;
+}
+
+/* Red tracking dot above current word */
+.karaoke-dot {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c0392b;
+  animation: pulse-dot 0.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Teleprompter word states */
+.tp-word-upcoming {
+  color: rgba(26, 22, 18, 0.45);
+}
+
+.tp-word-current {
+  color: #1a1612;
+  font-weight: 600;
+}
+
+.tp-word-passed-multi {
+  color: #d4a017;
+}
+
+.tp-word-passed {
+  color: #4a7fb5;
+}

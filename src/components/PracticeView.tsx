@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { gongyoData, getAllPracticeLineIds } from "@/data/gongyo";
 import LineRow from "./LineRow";
 import AudioPlayer from "./AudioPlayer";
+import type { WordPosition } from "./AudioPlayer";
 import Teleprompter from "./Teleprompter";
 import SpeedMenu, { getSpeedLabel } from "./SpeedMenu";
 import InspirationView from "./InspirationView";
@@ -19,6 +20,7 @@ export default function PracticeView() {
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
   const [playingLineId, setPlayingLineId] = useState<string | null>(null);
+  const [wordPosition, setWordPosition] = useState<WordPosition | null>(null);
   const [audioReady, setAudioReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +82,11 @@ export default function PracticeView() {
     setIsPlaying(false);
     setPlayTrigger(0);
     setPlayingLineId(null);
+    setWordPosition(null);
+  }, []);
+
+  const handleWordPositionChange = useCallback((pos: WordPosition | null) => {
+    setWordPosition(pos);
   }, []);
 
   const handleSpeedSelect = useCallback((speed: number) => {
@@ -199,6 +206,7 @@ export default function PracticeView() {
           {/* Teleprompter */}
           <Teleprompter
             currentLineId={playingLineId}
+            wordPosition={wordPosition}
             isVisible={isPlaying}
           />
 
@@ -226,6 +234,9 @@ export default function PracticeView() {
                     line={line}
                     isSelected={selectedIds.has(line.id)}
                     isPlaying={playingLineId === line.id}
+                    wordPosition={
+                      playingLineId === line.id ? wordPosition : null
+                    }
                     onToggle={toggleLine}
                   />
                 ))}
@@ -245,6 +256,7 @@ export default function PracticeView() {
         loopActive={loopActive}
         playbackSpeed={playbackSpeed}
         onPlayingLineChange={setPlayingLineId}
+        onWordPositionChange={handleWordPositionChange}
         onPlaybackEnd={handlePlaybackEnd}
         onAudioReady={setAudioReady}
         playTrigger={playTrigger}

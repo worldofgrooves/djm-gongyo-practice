@@ -1,9 +1,12 @@
 "use client";
 
 import { gongyoData, getAllPracticeLineIds } from "@/data/gongyo";
+import { wordTimestamps } from "@/data/word-timestamps";
+import type { WordPosition } from "./AudioPlayer";
 
 interface TeleprompterProps {
   currentLineId: string | null;
+  wordPosition: WordPosition | null;
   isVisible: boolean;
 }
 
@@ -17,6 +20,7 @@ gongyoData.sections.forEach((s) => {
 
 export default function Teleprompter({
   currentLineId,
+  wordPosition,
   isVisible,
 }: TeleprompterProps) {
   if (!isVisible || !currentLineId) return null;
@@ -29,6 +33,13 @@ export default function Teleprompter({
   const nextId =
     currentIndex < allIds.length - 1 ? allIds[currentIndex + 1] : null;
 
+  // Word-level rendering for current line
+  const lineWords = wordTimestamps[currentLineId];
+  const currentWordIdx =
+    wordPosition && wordPosition.lineId === currentLineId
+      ? wordPosition.wordIndex
+      : -1;
+
   return (
     <div className="bg-white border-b border-paper-deep px-5 py-3 flex-shrink-0 z-10">
       {/* Previous line */}
@@ -36,9 +47,31 @@ export default function Teleprompter({
         {prevId ? lineTextById[prevId] : ""}
       </div>
 
-      {/* Current line */}
-      <div className="font-serif text-[22px] text-ink font-medium leading-relaxed my-1">
-        {lineTextById[currentLineId]}
+      {/* Current line -- word-level */}
+      <div className="font-serif text-[22px] leading-relaxed my-1">
+        {lineWords ? (
+          lineWords.map((w, i) => {
+            let cls: string;
+            if (i === currentWordIdx) {
+              cls = "tp-word-current";
+            } else if (i < currentWordIdx) {
+              cls = w.multiSyllable ? "tp-word-passed-multi" : "tp-word-passed";
+            } else {
+              cls = "tp-word-upcoming";
+            }
+
+            return (
+              <span key={i} className={cls}>
+                {w.word}
+                {i < lineWords.length - 1 ? " " : ""}
+              </span>
+            );
+          })
+        ) : (
+          <span className="text-ink font-medium">
+            {lineTextById[currentLineId]}
+          </span>
+        )}
       </div>
 
       {/* Next line */}

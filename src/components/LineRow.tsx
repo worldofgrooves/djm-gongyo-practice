@@ -1,18 +1,23 @@
 "use client";
 
+import { memo } from "react";
 import { GongyoLine } from "@/data/gongyo";
+import { wordTimestamps } from "@/data/word-timestamps";
+import type { WordPosition } from "./AudioPlayer";
 
 interface LineRowProps {
   line: GongyoLine;
   isSelected: boolean;
   isPlaying: boolean;
+  wordPosition: WordPosition | null;
   onToggle: (id: string) => void;
 }
 
-export default function LineRow({
+function LineRowInner({
   line,
   isSelected,
   isPlaying,
+  wordPosition,
   onToggle,
 }: LineRowProps) {
   if (line.type === "title") {
@@ -27,6 +32,11 @@ export default function LineRow({
 
   const baseClasses = "flex items-center py-0.5 cursor-pointer transition-colors relative active:bg-paper-warm";
   const indentClass = line.indent ? "indent" : "";
+
+  // Get word data for this line
+  const lineWords = wordTimestamps[line.id];
+  const isThisLineActive = isPlaying && wordPosition && wordPosition.lineId === line.id;
+  const currentWordIdx = isThisLineActive ? wordPosition.wordIndex : -1;
 
   return (
     <div
@@ -52,16 +62,57 @@ export default function LineRow({
             : ""
         }`}
       >
-        <span
-          className={`font-serif text-[19px] leading-relaxed tracking-[0.01em] ${
-            isPlaying
-              ? "text-lotus italic"
-              : "text-ink"
-          }`}
-        >
-          {line.romaji}
-        </span>
+        {isThisLineActive && lineWords ? (
+          <span className="font-serif text-[19px] leading-relaxed tracking-[0.01em]">
+            {lineWords.map((w, i) => {
+              let cls: string;
+              if (i === currentWordIdx) {
+                cls = "word-current";
+              } else if (i < currentWordIdx) {
+                cls = w.multiSyllable ? "word-passed-multi" : "word-passed";
+              } else {
+                // Upcoming -- flag multi-syllable words that are next
+                cls = (w.multiSyllable && i === currentWordIdx + 1)
+                  ? "word-upcoming-multi"
+                  : "word-upcoming";
+              }
+
+              return (
+                <span key={i} className={`${cls} relative inline-block`}>
+                  {i === currentWordIdx && (
+                    <span className="karaoke-dot" />
+                  )}
+                  {w.word}
+                  {i < lineWords.length - 1 ? " " : ""}
+                </span>
+              );
+            })}
+          </span>
+        ) : (
+          <span
+            className={`font-serif text-[19px] leading-relaxed tracking-[0.01em] ${
+              isPlaying
+                ? "text-lotus italic"
+                : "text-ink"
+            }`}
+          >
+            {line.romaji}
+          </span>
+        )}
       </div>
     </div>
   );
 }
+
+const LineRow = memo(LineRowInner, (prev, next) => {
+  return (
+    prev.isSelected === next.isSelected &&
+    prev.isPlaying === next.isPlaying &&
+    prev.line.id === next.line.id &&
+    prev.wordPosition?.wordIndex === next.wordPosition?.wordIndex &&
+    prev.wordPosition?.lineId === next.wordPosition?.lineId
+  );
+});
+
+LineRow.displayName = "LineRow";
+export default LineRow;
