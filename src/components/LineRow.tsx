@@ -21,18 +21,28 @@ function LineRowInner({
   onToggle,
 }: LineRowProps) {
   if (line.type === "title") {
-    // Title lines: show kanji above romaji, centered
+    // Title lines: kanji above romaji, centered, paired per word
     const titleWords = wordTimestamps[line.id];
     return (
       <div className="py-1.5 px-5 text-center">
-        {titleWords && (
-          <div className="font-sans text-sm text-ink/60 tracking-[0.3em] mb-0.5">
-            {titleWords.map((w) => w.kanji).join(" ")}
+        {titleWords ? (
+          <div className="flex flex-wrap justify-center gap-x-3">
+            {titleWords.map((w, i) => (
+              <span key={i} className="inline-flex flex-col items-center">
+                <span className="font-sans text-[11px] text-ink/35 tracking-wider">
+                  {w.kanji}
+                </span>
+                <span className="font-sans text-xl font-semibold text-ink tracking-wide">
+                  {w.romaji}
+                </span>
+              </span>
+            ))}
           </div>
+        ) : (
+          <span className="font-sans text-xl font-semibold text-ink tracking-wide">
+            {line.romaji}
+          </span>
         )}
-        <span className="font-sans text-xl font-semibold text-ink tracking-wide">
-          {line.romaji}
-        </span>
       </div>
     );
   }
@@ -70,58 +80,60 @@ function LineRowInner({
         }`}
       >
         {isThisLineActive && lineWords ? (
+          /* Active/playing line: kanji-romaji paired columns with karaoke highlighting */
           <div className="font-sans leading-relaxed tracking-[0.01em]">
-            {/* Kanji row -- primary karaoke anchor */}
-            <div className="gongyo-text flex flex-wrap gap-x-1">
+            <div className="flex flex-wrap items-end gap-x-2">
               {lineWords.map((w, i) => {
-                let cls: string;
+                let kanjiCls: string;
                 if (i === currentWordIdx) {
-                  cls = "word-current";
+                  kanjiCls = "kanji-word-current";
                 } else if (i < currentWordIdx) {
-                  cls = w.multiSyllable ? "word-passed-multi" : "word-passed";
+                  kanjiCls = w.multiSyllable ? "kanji-word-passed-multi" : "kanji-word-passed";
                 } else {
-                  cls = (w.multiSyllable && i === currentWordIdx + 1)
+                  kanjiCls = (w.multiSyllable && i === currentWordIdx + 1)
+                    ? "kanji-word-upcoming-multi"
+                    : "";
+                }
+
+                let romajiCls: string;
+                if (i === currentWordIdx) {
+                  romajiCls = "word-current";
+                } else if (i < currentWordIdx) {
+                  romajiCls = w.multiSyllable ? "word-passed-multi" : "word-passed";
+                } else {
+                  romajiCls = (w.multiSyllable && i === currentWordIdx + 1)
                     ? "word-upcoming-multi"
                     : "word-upcoming";
                 }
 
                 return (
-                  <span key={i} className={`${cls} relative inline-block`}>
-                    {i === currentWordIdx && (
-                      <span className="karaoke-dot" />
-                    )}
-                    {w.kanji}
-                  </span>
-                );
-              })}
-            </div>
-            {/* Romaji row -- follows kanji highlighting */}
-            <div className="text-[13px] text-ink/50 mt-0.5 flex flex-wrap gap-x-1">
-              {lineWords.map((w, i) => {
-                let cls: string;
-                if (i === currentWordIdx) {
-                  cls = "text-ink/80 font-medium";
-                } else if (i < currentWordIdx) {
-                  cls = "text-ink/40";
-                } else {
-                  cls = "text-ink/30";
-                }
-                return (
-                  <span key={i} className={cls}>
-                    {w.romaji}
+                  <span key={i} className="inline-flex flex-col items-center">
+                    <span className={`text-[0.7em] text-ink/35 ${kanjiCls} relative inline-block`}>
+                      {i === currentWordIdx && (
+                        <span className="karaoke-dot" />
+                      )}
+                      {w.kanji}
+                    </span>
+                    <span className={`gongyo-text ${romajiCls}`}>
+                      {w.romaji}
+                    </span>
                   </span>
                 );
               })}
             </div>
           </div>
         ) : lineWords ? (
+          /* Static line with word data: kanji-romaji paired columns */
           <div className="font-sans leading-relaxed tracking-[0.01em]">
-            {/* Static kanji + romaji (not playing) */}
-            <div className={`gongyo-text ${isPlaying ? "text-lotus italic" : "text-ink"}`}>
-              {lineWords.map((w) => w.kanji).join(" ")}
-            </div>
-            <div className="text-[13px] text-ink/40 mt-0.5">
-              {line.romaji}
+            <div className="flex flex-wrap items-end gap-x-2">
+              {lineWords.map((w, i) => (
+                <span key={i} className="inline-flex flex-col items-center">
+                  <span className="text-[0.7em] text-ink/35">{w.kanji}</span>
+                  <span className={`gongyo-text ${isPlaying ? "text-lotus italic" : "text-ink"}`}>
+                    {w.romaji}
+                  </span>
+                </span>
+              ))}
             </div>
           </div>
         ) : (

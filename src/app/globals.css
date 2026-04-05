@@ -63,7 +63,7 @@ html, body {
   font-size: 22px;
 }
 
-/* ── Karaoke word states ── */
+/* ── Karaoke word states (romaji -- primary text) ── */
 
 /* Upcoming word (not reached yet) */
 .word-upcoming {
@@ -111,7 +111,30 @@ html, body {
   pointer-events: none;
 }
 
-/* Teleprompter word states */
+/* ── Kanji helper word states (small, subtle) ── */
+
+.kanji-word-current {
+  color: rgba(26, 22, 18, 0.6);
+  font-weight: 500;
+  transition: color 0.1s ease;
+}
+
+.kanji-word-passed {
+  color: rgba(74, 127, 181, 0.45);
+  transition: color 0.2s ease;
+}
+
+.kanji-word-passed-multi {
+  color: rgba(212, 160, 23, 0.45);
+  transition: color 0.2s ease;
+}
+
+.kanji-word-upcoming-multi {
+  color: rgba(192, 57, 43, 0.45);
+  transition: color 0.15s ease;
+}
+
+/* ── Teleprompter word states (romaji -- primary text) ── */
 .tp-word-upcoming {
   color: rgba(26, 22, 18, 0.45);
 }
