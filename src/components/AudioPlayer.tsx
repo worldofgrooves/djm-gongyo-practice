@@ -23,8 +23,10 @@ interface AudioPlayerProps {
 }
 
 // Delay word highlighting so it trails audio rather than leading it.
-// Positive value = indicator moves later (slower).
-const WORD_SYNC_OFFSET_MS = 250;
+// The Whisper timestamps tend to fire early because they mark the onset
+// of each sound, while the human ear perceives the word slightly later.
+// 500ms compensates for this plus the proportional distribution error.
+const WORD_SYNC_OFFSET_S = 0.5;
 
 export default function AudioPlayer({
   selectedIds,
@@ -130,7 +132,7 @@ export default function AudioPlayer({
           // Word-level tracking (apply offset so indicator trails audio)
           const lineWords = wordTimestamps[activeTs.id];
           if (lineWords) {
-            const wordTime = currentTime - WORD_SYNC_OFFSET_MS / 1000;
+            const wordTime = currentTime - WORD_SYNC_OFFSET_S;
             let wordIdx = -1;
             for (let i = 0; i < lineWords.length; i++) {
               if (wordTime >= lineWords[i].start && wordTime < lineWords[i].end) {

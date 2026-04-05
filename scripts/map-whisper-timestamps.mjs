@@ -2,12 +2,21 @@
 /**
  * Map Whisper word-level timestamps from gongyo-solo.json to romaji lines.
  *
+ * Audio structure of gongyo-solo.mp3 (402.9s):
+ *   0.0 - 5.5s    : silence
+ *   5.5 - 9.6s    : opening chant "Myo ho ren ge kyo" (h0)
+ *   9.8 - 28.0s   : "Hoben-pon Dai ni" + opening recitation (h1)
+ *   28.3 - 29.8s  : transition
+ *   30.0 - 137.6s : Hoben body -- Whisper transcribed (h2-h45)
+ *   137.6 - 164.9s: daimoku (not tracked)
+ *   164.9 - 167.6s: "Myo ho ren ge kyo" (j0) + title (j1)
+ *   167.7 - 398.6s: Juryo body -- Whisper transcribed (j2-j103)
+ *   398.6 - 402.9s: trailing silence
+ *
  * Strategy:
- * 1. Flatten all Whisper words into a timeline
- * 2. Split into Hoben and Juryo sections by the gap (~137s-167s)
- * 3. For each section, map romaji lines proportionally to Whisper word boundaries
- * 4. Within each line's time range, distribute romaji words proportionally
- * 5. Output word-timestamps.ts and updated timestamps.ts
+ *   1. Title timestamps placed from audio silence analysis
+ *   2. Body timestamps from Whisper word boundaries (proportional mapping)
+ *   3. Word-level timing uses Whisper boundaries; romaji words distributed by char weight
  */
 
 import { readFileSync, writeFileSync } from 'fs';
@@ -22,20 +31,24 @@ const whisperData = JSON.parse(
   readFileSync(resolve(projectRoot, '../gongyo-practice/gongyo-solo.json'), 'utf-8')
 );
 
-// Flatten all Whisper words
+// Flatten all Whisper words, fixing zero-duration entries
 const allWhisperWords = [];
 for (const seg of whisperData.segments) {
-  for (const w of (seg.words || [])) {
-    allWhisperWords.push({ word: w.word, start: w.start, end: w.end });
+  for (let wi = 0; wi < (seg.words || []).length; wi++) {
+    const w = seg.words[wi];
+    let end = w.end;
+    // Fix zero-duration words: extend to start of next word or +0.2s
+    if (end <= w.start) {
+      const nextWord = seg.words[wi + 1];
+      end = nextWord ? nextWord.start : w.start + 0.2;
+    }
+    allWhisperWords.push({ word: w.word, start: w.start, end });
   }
 }
 
-console.log(`Total Whisper words: ${allWhisperWords.length}`);
+console.log(`Total Whisper words: ${allWhisperWords.length} (zero-duration words fixed)`);
 
 // ─── Define romaji lines ───
-// Title lines are likely NOT in the solo recording (it starts with the body chant)
-// But we'll handle them with short synthetic timestamps at the section start
-
 const hobenTitles = [
   { id: "h0", text: "Myo ho ren ge kyo." },
   { id: "h1", text: "Hoben-pon. Dai ni." },
@@ -199,7 +212,9 @@ const juryoBody = [
 ];
 
 // ─── Split Whisper words by gap ───
-const GAP_THRESHOLD = 10; // seconds
+// The gap between Hoben body and Juryo body is daimoku chanting.
+// Whisper skips it. We detect by the largest time gap between consecutive words.
+const GAP_THRESHOLD = 10;
 let gapStart = 0, gapEnd = 0;
 for (let i = 1; i < allWhisperWords.length; i++) {
   const gap = allWhisperWords[i].start - allWhisperWords[i - 1].end;
@@ -209,7 +224,7 @@ for (let i = 1; i < allWhisperWords.length; i++) {
     break;
   }
 }
-console.log(`Gap between Hoben and Juryo: ${gapStart.toFixed(2)}s - ${gapEnd.toFixed(2)}s`);
+console.log(`Whisper gap (daimoku): ${gapStart.toFixed(2)}s - ${gapEnd.toFixed(2)}s`);
 
 const hobenWhisperWords = allWhisperWords.filter(w => w.end <= gapStart + 1);
 const juryoWhisperWords = allWhisperWords.filter(w => w.start >= gapEnd - 1);
@@ -227,24 +242,38 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+function distributeWords(romajiWords, lineStart, lineEnd) {
+  const charWeights = romajiWords.map(w => w.replace(/[.]/g, '').length);
+  const totalChars = charWeights.reduce((a, b) => a + b, 0);
+  const duration = lineEnd - lineStart;
+  const timings = [];
+  let cur = lineStart;
+
+  for (let i = 0; i < romajiWords.length; i++) {
+    const weight = charWeights[i] / totalChars;
+    const wordDur = duration * weight;
+    const wordEnd = i === romajiWords.length - 1 ? lineEnd : cur + wordDur;
+
+    timings.push({
+      word: romajiWords[i],
+      start: round2(cur),
+      end: round2(wordEnd),
+      multiSyllable: isMultiSyllable(romajiWords[i]),
+    });
+    cur = wordEnd;
+  }
+  return timings;
+}
+
 /**
- * Map romaji lines to Whisper word timing.
- *
- * For each romaji line, we compute its proportional share of the total
- * character count, then assign that proportion of Whisper words.
- * This gives us a time range. Within that range, we distribute
- * the romaji words by character weight.
+ * Map romaji lines to Whisper word timing using proportional distribution.
  */
 function mapLinesToWhisperWords(romajiLines, whisperWords) {
-  // Total romaji characters (used as weight for proportional mapping)
   const lineCharCounts = romajiLines.map(l => l.text.replace(/[.\s]/g, '').length);
   const totalChars = lineCharCounts.reduce((a, b) => a + b, 0);
-
-  // Distribute Whisper words proportionally across lines
   const totalWW = whisperWords.length;
   const results = {};
   const lineTimestamps = [];
-
   let whisperIdx = 0;
 
   for (let li = 0; li < romajiLines.length; li++) {
@@ -252,35 +281,25 @@ function mapLinesToWhisperWords(romajiLines, whisperWords) {
     const romajiWords = line.text.split(/\s+/);
     const lineWeight = lineCharCounts[li] / totalChars;
 
-    // How many Whisper words this line gets (proportional, ensure at least 1)
     let wwCount;
     if (li === romajiLines.length - 1) {
-      // Last line gets whatever is remaining
       wwCount = totalWW - whisperIdx;
     } else {
       wwCount = Math.max(1, Math.round(lineWeight * totalWW));
-      // Don't overshoot
       if (whisperIdx + wwCount > totalWW) {
         wwCount = totalWW - whisperIdx;
       }
     }
 
-    // Get this line's Whisper words
     const lineWW = whisperWords.slice(whisperIdx, whisperIdx + wwCount);
     whisperIdx += wwCount;
 
     if (lineWW.length === 0) {
-      // Edge case: no Whisper words left -- use last known time
       const lastEnd = lineTimestamps.length > 0
         ? lineTimestamps[lineTimestamps.length - 1].end
         : whisperWords[0]?.start || 0;
       lineTimestamps.push({ id: line.id, start: round2(lastEnd), end: round2(lastEnd + 0.5) });
-      results[line.id] = romajiWords.map((w, i) => ({
-        word: w,
-        start: round2(lastEnd + i * 0.1),
-        end: round2(lastEnd + (i + 1) * 0.1),
-        multiSyllable: isMultiSyllable(w),
-      }));
+      results[line.id] = distributeWords(romajiWords, lastEnd, lastEnd + 0.5);
       continue;
     }
 
@@ -288,91 +307,60 @@ function mapLinesToWhisperWords(romajiLines, whisperWords) {
     const lineEnd = lineWW[lineWW.length - 1].end;
 
     lineTimestamps.push({ id: line.id, start: round2(lineStart), end: round2(lineEnd) });
-
-    // Now distribute romaji words within this line's time range
-    // Use character-weighted proportional distribution with Whisper timing as anchors
-    const romajiCharWeights = romajiWords.map(w => w.replace(/[.]/g, '').length);
-    const totalRomajiChars = romajiCharWeights.reduce((a, b) => a + b, 0);
-
-    const duration = lineEnd - lineStart;
-    const wordTimings = [];
-    let currentStart = lineStart;
-
-    for (let wi = 0; wi < romajiWords.length; wi++) {
-      const wordWeight = romajiCharWeights[wi] / totalRomajiChars;
-      const wordDuration = duration * wordWeight;
-      const wordEnd = wi === romajiWords.length - 1
-        ? lineEnd  // last word gets exact end
-        : currentStart + wordDuration;
-
-      wordTimings.push({
-        word: romajiWords[wi],
-        start: round2(currentStart),
-        end: round2(wordEnd),
-        multiSyllable: isMultiSyllable(romajiWords[wi]),
-      });
-
-      currentStart = wordEnd;
-    }
-
-    results[line.id] = wordTimings;
+    results[line.id] = distributeWords(romajiWords, lineStart, lineEnd);
   }
 
   return { wordTimestamps: results, lineTimestamps };
 }
 
-// ─── Process Hoben ───
-console.log('\n--- Hoben ---');
+// ─── Process body sections ───
+console.log('\n--- Hoben body ---');
 const hobenResult = mapLinesToWhisperWords(hobenBody, hobenWhisperWords);
-console.log(`Mapped ${Object.keys(hobenResult.wordTimestamps).length} Hoben lines`);
+console.log(`Mapped ${Object.keys(hobenResult.wordTimestamps).length} lines`);
 
-// ─── Process Juryo ───
-console.log('\n--- Juryo ---');
+console.log('\n--- Juryo body ---');
 const juryoResult = mapLinesToWhisperWords(juryoBody, juryoWhisperWords);
-console.log(`Mapped ${Object.keys(juryoResult.wordTimestamps).length} Juryo lines`);
+console.log(`Mapped ${Object.keys(juryoResult.wordTimestamps).length} lines`);
 
-// ─── Handle titles ───
-// Titles get synthetic timestamps just before the body starts
-const hobenBodyStart = hobenResult.lineTimestamps[0]?.start || 30;
-const juryoBodyStart = juryoResult.lineTimestamps[0]?.start || 167.68;
+// ─── Title timestamps from audio analysis ───
+// Audio silence detection shows:
+//   5.5s: chanting begins
+//   9.6s: brief pause (boundary between h0 and h1)
+//   ~28.0s: pause before body starts at 30s
+// Juryo:
+//   164.9s: pause in daimoku pattern -> title chant begins
+//   167.6s: pause -> body begins at ~167.7s
 
 const titleWordTimestamps = {};
 const titleLineTimestamps = [];
 
-// Hoben titles: 2s before body
-for (let i = 0; i < hobenTitles.length; i++) {
-  const title = hobenTitles[i];
-  const words = title.text.split(/\s+/);
-  const tStart = hobenBodyStart - (hobenTitles.length - i) * 1.5;
-  const tEnd = tStart + 1.2;
-
-  titleLineTimestamps.push({ id: title.id, start: round2(tStart), end: round2(tEnd) });
-
-  const dur = tEnd - tStart;
-  titleWordTimestamps[title.id] = words.map((w, wi) => ({
-    word: w,
-    start: round2(tStart + (wi / words.length) * dur),
-    end: round2(tStart + ((wi + 1) / words.length) * dur),
-    multiSyllable: isMultiSyllable(w),
-  }));
+// h0: "Myo ho ren ge kyo." -- 5.5s to 9.6s
+{
+  const words = hobenTitles[0].text.split(/\s+/);
+  titleLineTimestamps.push({ id: "h0", start: 5.5, end: 9.6 });
+  titleWordTimestamps["h0"] = distributeWords(words, 5.5, 9.6);
 }
 
-// Juryo titles: 2s before body
-for (let i = 0; i < juryoTitles.length; i++) {
-  const title = juryoTitles[i];
-  const words = title.text.split(/\s+/);
-  const tStart = juryoBodyStart - (juryoTitles.length - i) * 1.5;
-  const tEnd = tStart + 1.2;
+// h1: "Hoben-pon. Dai ni." -- 9.8s to 16.0s
+// (The slow title recitation; the ~16s-28s range is likely opening daimoku)
+{
+  const words = hobenTitles[1].text.split(/\s+/);
+  titleLineTimestamps.push({ id: "h1", start: 9.8, end: 16.0 });
+  titleWordTimestamps["h1"] = distributeWords(words, 9.8, 16.0);
+}
 
-  titleLineTimestamps.push({ id: title.id, start: round2(tStart), end: round2(tEnd) });
+// j0: "Myo ho ren ge kyo." -- 163.5s to 165.1s
+{
+  const words = juryoTitles[0].text.split(/\s+/);
+  titleLineTimestamps.push({ id: "j0", start: 163.5, end: 165.1 });
+  titleWordTimestamps["j0"] = distributeWords(words, 163.5, 165.1);
+}
 
-  const dur = tEnd - tStart;
-  titleWordTimestamps[title.id] = words.map((w, wi) => ({
-    word: w,
-    start: round2(tStart + (wi / words.length) * dur),
-    end: round2(tStart + ((wi + 1) / words.length) * dur),
-    multiSyllable: isMultiSyllable(w),
-  }));
+// j1: "Nyorai ju-ryo-hon. Dai ju-roku." -- 165.1s to 167.6s
+{
+  const words = juryoTitles[1].text.split(/\s+/);
+  titleLineTimestamps.push({ id: "j1", start: 165.1, end: 167.6 });
+  titleWordTimestamps["j1"] = distributeWords(words, 165.1, 167.6);
 }
 
 // ─── Combine everything ───
@@ -389,7 +377,6 @@ const allLineTimestamps = [
   ...juryoResult.lineTimestamps,
 ];
 
-// Sort by natural order
 const lineOrder = (id) => {
   const prefix = id[0] === 'h' ? 0 : 1000;
   return prefix + parseInt(id.slice(1));
@@ -409,9 +396,10 @@ console.log(`Total words: ${totalWords}`);
 console.log(`Multi-syllable words: ${multiSyllableCount}`);
 
 // ─── Write word-timestamps.ts ───
-let tsOutput = `// Word-level timestamps for gongyo lines
-// Generated from Whisper word-level analysis of gongyo-solo.mp3
-// Whisper provides timing; romaji words distributed proportionally within each line
+let tsOutput = `// Word-level timestamps for gongyo lines (gongyo-solo.mp3)
+// Title timestamps from audio silence detection
+// Body timestamps from Whisper word-level analysis
+// Romaji words distributed proportionally by character weight within each line
 
 export interface WordTimestamp {
   word: string;
@@ -424,7 +412,6 @@ export type WordTimestampMap = Record<string, WordTimestamp[]>;
 
 export const wordTimestamps: WordTimestampMap = {\n`;
 
-// Output in order
 const orderedIds = Object.keys(allWordTimestamps).sort((a, b) => lineOrder(a) - lineOrder(b));
 
 for (const id of orderedIds) {
@@ -466,9 +453,9 @@ gongyoTimestamps.forEach((t) => {
 writeFileSync(resolve(projectRoot, 'src/data/timestamps.ts'), tsTimestamps);
 console.log('Wrote src/data/timestamps.ts');
 
-// ─── Print first few lines for verification ───
-console.log('\n--- Sample output (first 5 body lines) ---');
-for (const id of ['h2', 'h3', 'h4', 'h5', 'h6']) {
+// ─── Print samples for verification ───
+console.log('\n--- Titles ---');
+for (const id of ['h0', 'h1', 'j0', 'j1']) {
   const lt = allLineTimestamps.find(t => t.id === id);
   const wt = allWordTimestamps[id];
   console.log(`\n${id}: ${lt.start}s - ${lt.end}s`);
@@ -477,8 +464,8 @@ for (const id of ['h2', 'h3', 'h4', 'h5', 'h6']) {
   }
 }
 
-console.log('\n--- Sample Juryo (first 5 body lines) ---');
-for (const id of ['j2', 'j3', 'j4', 'j5', 'j6']) {
+console.log('\n--- First body lines ---');
+for (const id of ['h2', 'h3', 'j2', 'j3']) {
   const lt = allLineTimestamps.find(t => t.id === id);
   const wt = allWordTimestamps[id];
   console.log(`\n${id}: ${lt.start}s - ${lt.end}s`);

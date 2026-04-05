@@ -1,6 +1,7 @@
-// Word-level timestamps for gongyo lines
-// Generated from Whisper word-level analysis of gongyo-solo.mp3
-// Whisper provides timing; romaji words distributed proportionally within each line
+// Word-level timestamps for gongyo lines (gongyo-solo.mp3)
+// Title timestamps from audio silence detection
+// Body timestamps from Whisper word-level analysis
+// Romaji words distributed proportionally by character weight within each line
 
 export interface WordTimestamp {
   word: string;
@@ -13,16 +14,16 @@ export type WordTimestampMap = Record<string, WordTimestamp[]>;
 
 export const wordTimestamps: WordTimestampMap = {
   "h0": [
-    { word: "Myo", start: 27, end: 27.24, multiSyllable: false },
-    { word: "ho", start: 27.24, end: 27.48, multiSyllable: false },
-    { word: "ren", start: 27.48, end: 27.72, multiSyllable: false },
-    { word: "ge", start: 27.72, end: 27.96, multiSyllable: false },
-    { word: "kyo.", start: 27.96, end: 28.2, multiSyllable: false },
+    { word: "Myo", start: 5.5, end: 6.45, multiSyllable: false },
+    { word: "ho", start: 6.45, end: 7.08, multiSyllable: false },
+    { word: "ren", start: 7.08, end: 8.02, multiSyllable: false },
+    { word: "ge", start: 8.02, end: 8.65, multiSyllable: false },
+    { word: "kyo.", start: 8.65, end: 9.6, multiSyllable: false },
   ],
   "h1": [
-    { word: "Hoben-pon.", start: 28.5, end: 28.9, multiSyllable: true },
-    { word: "Dai", start: 28.9, end: 29.3, multiSyllable: false },
-    { word: "ni.", start: 29.3, end: 29.7, multiSyllable: false },
+    { word: "Hoben-pon.", start: 9.8, end: 13.79, multiSyllable: true },
+    { word: "Dai", start: 13.79, end: 15.11, multiSyllable: false },
+    { word: "ni.", start: 15.11, end: 16, multiSyllable: false },
   ],
   "h2": [
     { word: "Niji", start: 30, end: 30.55, multiSyllable: true },
@@ -346,17 +347,17 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "to.", start: 137.52, end: 137.6, multiSyllable: false },
   ],
   "j0": [
-    { word: "Myo", start: 164.68, end: 164.92, multiSyllable: false },
-    { word: "ho", start: 164.92, end: 165.16, multiSyllable: false },
-    { word: "ren", start: 165.16, end: 165.4, multiSyllable: false },
-    { word: "ge", start: 165.4, end: 165.64, multiSyllable: false },
-    { word: "kyo.", start: 165.64, end: 165.88, multiSyllable: false },
+    { word: "Myo", start: 163.5, end: 163.87, multiSyllable: false },
+    { word: "ho", start: 163.87, end: 164.12, multiSyllable: false },
+    { word: "ren", start: 164.12, end: 164.48, multiSyllable: false },
+    { word: "ge", start: 164.48, end: 164.73, multiSyllable: false },
+    { word: "kyo.", start: 164.73, end: 165.1, multiSyllable: false },
   ],
   "j1": [
-    { word: "Nyorai", start: 166.18, end: 166.48, multiSyllable: true },
-    { word: "ju-ryo-hon.", start: 166.48, end: 166.78, multiSyllable: true },
-    { word: "Dai", start: 166.78, end: 167.08, multiSyllable: false },
-    { word: "ju-roku.", start: 167.08, end: 167.38, multiSyllable: true },
+    { word: "Nyorai", start: 165.1, end: 165.68, multiSyllable: true },
+    { word: "ju-ryo-hon.", start: 165.68, end: 166.64, multiSyllable: true },
+    { word: "Dai", start: 166.64, end: 166.93, multiSyllable: false },
+    { word: "ju-roku.", start: 166.93, end: 167.6, multiSyllable: true },
   ],
   "j2": [
     { word: "Ji", start: 167.68, end: 168.03, multiSyllable: false },
@@ -393,15 +394,15 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "shujo.", start: 181.75, end: 182.56, multiSyllable: true },
   ],
   "j8": [
-    { word: "Ryo", start: 182.56, end: 183.04, multiSyllable: false },
-    { word: "nyu", start: 183.04, end: 183.52, multiSyllable: false },
-    { word: "o", start: 183.52, end: 183.68, multiSyllable: false },
-    { word: "butsu-do.", start: 183.68, end: 184.96, multiSyllable: true },
+    { word: "Ryo", start: 182.56, end: 183.08, multiSyllable: false },
+    { word: "nyu", start: 183.08, end: 183.6, multiSyllable: false },
+    { word: "o", start: 183.6, end: 183.77, multiSyllable: false },
+    { word: "butsu-do.", start: 183.77, end: 185.16, multiSyllable: true },
   ],
   "j9": [
-    { word: "Nirai", start: 184.96, end: 185.89, multiSyllable: true },
-    { word: "muryo", start: 185.89, end: 186.81, multiSyllable: true },
-    { word: "ko.", start: 186.81, end: 187.18, multiSyllable: false },
+    { word: "Nirai", start: 184.96, end: 185.97, multiSyllable: true },
+    { word: "muryo", start: 185.97, end: 186.98, multiSyllable: true },
+    { word: "ko.", start: 186.98, end: 187.38, multiSyllable: false },
   ],
   "j10": [
     { word: "I", start: 187.18, end: 187.36, multiSyllable: false },
@@ -474,9 +475,9 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "shin.", start: 214.17, end: 214.84, multiSyllable: false },
   ],
   "j22": [
-    { word: "Shujo", start: 214.98, end: 215.88, multiSyllable: true },
-    { word: "ki", start: 215.88, end: 216.24, multiSyllable: false },
-    { word: "shin-buku.", start: 216.24, end: 217.86, multiSyllable: true },
+    { word: "Shujo", start: 214.98, end: 215.94, multiSyllable: true },
+    { word: "ki", start: 215.94, end: 216.33, multiSyllable: false },
+    { word: "shin-buku.", start: 216.33, end: 218.06, multiSyllable: true },
   ],
   "j23": [
     { word: "Shichi-jiki", start: 217.86, end: 219.75, multiSyllable: true },
@@ -490,10 +491,10 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "butsu.", start: 223.12, end: 223.98, multiSyllable: true },
   ],
   "j25": [
-    { word: "Fu", start: 223.98, end: 224.2, multiSyllable: false },
-    { word: "ji", start: 224.2, end: 224.43, multiSyllable: false },
-    { word: "shaku", start: 224.43, end: 224.98, multiSyllable: true },
-    { word: "shinmyo.", start: 224.98, end: 225.76, multiSyllable: true },
+    { word: "Fu", start: 223.98, end: 224.25, multiSyllable: false },
+    { word: "ji", start: 224.25, end: 224.53, multiSyllable: false },
+    { word: "shaku", start: 224.53, end: 225.21, multiSyllable: true },
+    { word: "shinmyo.", start: 225.21, end: 226.16, multiSyllable: true },
   ],
   "j26": [
     { word: "Ji", start: 226.16, end: 226.42, multiSyllable: false },
@@ -576,17 +577,17 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "kukai.", start: 257.47, end: 258.22, multiSyllable: true },
   ],
   "j40": [
-    { word: "Ko", start: 258.46, end: 258.79, multiSyllable: false },
-    { word: "fu", start: 258.79, end: 259.12, multiSyllable: false },
-    { word: "i", start: 259.12, end: 259.28, multiSyllable: false },
-    { word: "gen", start: 259.28, end: 259.78, multiSyllable: false },
-    { word: "shin.", start: 259.78, end: 260.44, multiSyllable: false },
+    { word: "Ko", start: 258.46, end: 258.85, multiSyllable: false },
+    { word: "fu", start: 258.85, end: 259.25, multiSyllable: false },
+    { word: "i", start: 259.25, end: 259.44, multiSyllable: false },
+    { word: "gen", start: 259.44, end: 260.03, multiSyllable: false },
+    { word: "shin.", start: 260.03, end: 260.82, multiSyllable: false },
   ],
   "j41": [
-    { word: "Ryo", start: 260.82, end: 261.3, multiSyllable: false },
-    { word: "go", start: 261.3, end: 261.61, multiSyllable: false },
-    { word: "sho", start: 261.61, end: 262.09, multiSyllable: false },
-    { word: "katsu-go.", start: 262.09, end: 263.36, multiSyllable: true },
+    { word: "Ryo", start: 260.82, end: 261.33, multiSyllable: false },
+    { word: "go", start: 261.33, end: 261.68, multiSyllable: false },
+    { word: "sho", start: 261.68, end: 262.19, multiSyllable: false },
+    { word: "katsu-go.", start: 262.19, end: 263.56, multiSyllable: true },
   ],
   "j42": [
     { word: "In", start: 263.36, end: 263.69, multiSyllable: false },
@@ -601,9 +602,9 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "seppo.", start: 267.35, end: 268.26, multiSyllable: true },
   ],
   "j44": [
-    { word: "Jin-zu-riki", start: 268.36, end: 270.05, multiSyllable: true },
-    { word: "nyo", start: 270.05, end: 270.51, multiSyllable: false },
-    { word: "ze.", start: 270.51, end: 270.82, multiSyllable: false },
+    { word: "Jin-zu-riki", start: 268.36, end: 270.08, multiSyllable: true },
+    { word: "nyo", start: 270.08, end: 270.55, multiSyllable: false },
+    { word: "ze.", start: 270.55, end: 270.86, multiSyllable: false },
   ],
   "j45": [
     { word: "O", start: 270.86, end: 271, multiSyllable: false },
@@ -611,9 +612,9 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "ko.", start: 271.7, end: 271.98, multiSyllable: false },
   ],
   "j46": [
-    { word: "Jo", start: 271.98, end: 272.33, multiSyllable: false },
-    { word: "zai", start: 272.33, end: 272.86, multiSyllable: false },
-    { word: "ryojusen.", start: 272.86, end: 274.26, multiSyllable: true },
+    { word: "Jo", start: 271.98, end: 272.36, multiSyllable: false },
+    { word: "zai", start: 272.36, end: 272.93, multiSyllable: false },
+    { word: "ryojusen.", start: 272.93, end: 274.46, multiSyllable: true },
   ],
   "j47": [
     { word: "Gyu", start: 274.26, end: 274.76, multiSyllable: false },
@@ -628,11 +629,11 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "jin.", start: 278.13, end: 278.64, multiSyllable: false },
   ],
   "j49": [
-    { word: "Dai", start: 278.64, end: 279.15, multiSyllable: false },
-    { word: "ka", start: 279.15, end: 279.49, multiSyllable: false },
-    { word: "sho", start: 279.49, end: 279.99, multiSyllable: false },
-    { word: "sho", start: 279.99, end: 280.5, multiSyllable: false },
-    { word: "ji.", start: 280.5, end: 280.84, multiSyllable: false },
+    { word: "Dai", start: 278.64, end: 279.19, multiSyllable: false },
+    { word: "ka", start: 279.19, end: 279.56, multiSyllable: false },
+    { word: "sho", start: 279.56, end: 280.12, multiSyllable: false },
+    { word: "sho", start: 280.12, end: 280.67, multiSyllable: false },
+    { word: "ji.", start: 280.67, end: 281.04, multiSyllable: false },
   ],
   "j50": [
     { word: "Ga", start: 280.84, end: 281.21, multiSyllable: false },
@@ -946,8 +947,8 @@ export const wordTimestamps: WordTimestampMap = {
     { word: "do.", start: 397.31, end: 397.6, multiSyllable: false },
   ],
   "j103": [
-    { word: "Soku", start: 397.84, end: 398.05, multiSyllable: true },
-    { word: "joju", start: 398.05, end: 398.26, multiSyllable: true },
-    { word: "busshin.", start: 398.26, end: 398.62, multiSyllable: true },
+    { word: "Soku", start: 397.84, end: 398.1, multiSyllable: true },
+    { word: "joju", start: 398.1, end: 398.36, multiSyllable: true },
+    { word: "busshin.", start: 398.36, end: 398.82, multiSyllable: true },
   ],
 };
