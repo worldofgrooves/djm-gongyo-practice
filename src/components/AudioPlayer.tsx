@@ -52,7 +52,7 @@ export default function AudioPlayer({
 
   // Initialize audio element
   useEffect(() => {
-    const audio = new Audio("/gongyo.mp3");
+    const audio = new Audio("/gongyo-solo.mp3");
     audio.preload = "auto";
     audioRef.current = audio;
 

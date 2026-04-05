@@ -1,7 +1,7 @@
 // Service Worker for Gongyo Practice PWA
 
-const CACHE_NAME = "gongyo-v1";
-const STATIC_ASSETS = ["/", "/gongyo.mp3"];
+const CACHE_NAME = "gongyo-v2";
+const STATIC_ASSETS = ["/", "/gongyo-solo.mp3"];
 
 // Install: cache core assets
 self.addEventListener("install", (event) => {
@@ -30,7 +30,7 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
 
   // Audio file: cache-first
-  if (request.url.includes("gongyo.mp3")) {
+  if (request.url.includes("gongyo-solo.mp3")) {
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request))
     );
