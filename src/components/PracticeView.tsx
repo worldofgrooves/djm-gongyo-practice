@@ -7,9 +7,17 @@ import AudioPlayer from "./AudioPlayer";
 import type { WordPosition } from "./AudioPlayer";
 import Teleprompter from "./Teleprompter";
 import SpeedMenu, { getSpeedLabel } from "./SpeedMenu";
+import FontSizeMenu from "./FontSizeMenu";
+import type { FontSizeKey } from "./FontSizeMenu";
 import InspirationView from "./InspirationView";
 
 type Tab = "practice" | "inspiration";
+
+const FONT_SIZE_CLASS_MAP: Record<FontSizeKey, string> = {
+  sm: "gongyo-text-sm",
+  md: "gongyo-text-md",
+  lg: "gongyo-text-lg",
+};
 
 export default function PracticeView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -19,16 +27,22 @@ export default function PracticeView() {
   const [loopActive, setLoopActive] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
+  const [fontSizeMenuOpen, setFontSizeMenuOpen] = useState(false);
+  const [fontSize, setFontSize] = useState<FontSizeKey>("md");
   const [playingLineId, setPlayingLineId] = useState<string | null>(null);
   const [wordPosition, setWordPosition] = useState<WordPosition | null>(null);
   const [audioReady, setAudioReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Restore saved speed from localStorage
+  // Restore saved preferences from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("gongyoSpeed");
-    if (saved) {
-      setPlaybackSpeed(parseFloat(saved));
+    const savedSpeed = localStorage.getItem("gongyoSpeed");
+    if (savedSpeed) {
+      setPlaybackSpeed(parseFloat(savedSpeed));
+    }
+    const savedSize = localStorage.getItem("gongyoFontSize");
+    if (savedSize && (savedSize === "sm" || savedSize === "md" || savedSize === "lg")) {
+      setFontSize(savedSize as FontSizeKey);
     }
   }, []);
 
@@ -67,7 +81,6 @@ export default function PracticeView() {
       setIsPlaying(false);
       setPlayTrigger(0);
     } else {
-      // Need at least audio ready or we do text-only
       const ordered =
         selectedIds.size > 0
           ? getAllPracticeLineIds().filter((id) => selectedIds.has(id))
@@ -95,6 +108,12 @@ export default function PracticeView() {
     setSpeedMenuOpen(false);
   }, []);
 
+  const handleFontSizeSelect = useCallback((size: FontSizeKey) => {
+    setFontSize(size);
+    localStorage.setItem("gongyoFontSize", size);
+    setFontSizeMenuOpen(false);
+  }, []);
+
   const selCount = selectedIds.size;
   const instructionText =
     selCount === 0
@@ -103,16 +122,22 @@ export default function PracticeView() {
       ? "1 line selected -- will loop on repeat"
       : `${selCount} lines selected -- will loop in sequence`;
 
+  const fontSizeClass = FONT_SIZE_CLASS_MAP[fontSize];
+
   return (
-    <div className="flex flex-col h-[100dvh] max-w-[500px] mx-auto bg-paper relative">
+    <div className={`flex flex-col h-[100dvh] max-w-[500px] mx-auto bg-paper relative ${fontSizeClass}`}>
       {/* HEADER */}
       <div className="px-5 pt-[calc(env(safe-area-inset-top,0px)+16px)] bg-paper z-10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="font-serif text-[22px] font-light text-ink tracking-wide">
+          <h1 className="font-sans text-[22px] font-light text-ink tracking-wide">
             Nam Myoho <span className="text-gold italic">Gongyo</span>
           </h1>
-          <button className="bg-transparent border-none cursor-pointer p-1.5 text-ink-muted text-xl rounded-lg active:bg-paper-deep transition-colors">
-            &#9784;
+          <button
+            onClick={() => setFontSizeMenuOpen(true)}
+            className="bg-transparent border border-paper-deep cursor-pointer px-2.5 py-1 text-ink-muted text-[13px] font-sans font-semibold rounded-lg active:bg-paper-deep transition-colors tracking-wide"
+            title="Font size"
+          >
+            Aa
           </button>
         </div>
 
@@ -268,6 +293,14 @@ export default function PracticeView() {
         currentSpeed={playbackSpeed}
         onSelect={handleSpeedSelect}
         onClose={() => setSpeedMenuOpen(false)}
+      />
+
+      {/* FONT SIZE MENU */}
+      <FontSizeMenu
+        isOpen={fontSizeMenuOpen}
+        currentSize={fontSize}
+        onSelect={handleFontSizeSelect}
+        onClose={() => setFontSizeMenuOpen(false)}
       />
     </div>
   );

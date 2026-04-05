@@ -22,6 +22,10 @@ interface AudioPlayerProps {
   playTrigger: number;
 }
 
+// Delay word highlighting so it trails audio rather than leading it.
+// Positive value = indicator moves later (slower).
+const WORD_SYNC_OFFSET_MS = 250;
+
 export default function AudioPlayer({
   selectedIds,
   isPlaying,
@@ -123,12 +127,13 @@ export default function AudioPlayer({
             onPlayingLineChange(activeTs.id);
           }
 
-          // Word-level tracking
+          // Word-level tracking (apply offset so indicator trails audio)
           const lineWords = wordTimestamps[activeTs.id];
           if (lineWords) {
+            const wordTime = currentTime - WORD_SYNC_OFFSET_MS / 1000;
             let wordIdx = -1;
             for (let i = 0; i < lineWords.length; i++) {
-              if (currentTime >= lineWords[i].start && currentTime < lineWords[i].end) {
+              if (wordTime >= lineWords[i].start && wordTime < lineWords[i].end) {
                 wordIdx = i;
                 break;
               }
@@ -136,7 +141,7 @@ export default function AudioPlayer({
             // If between words, check if we're past the last matched
             if (wordIdx === -1) {
               for (let i = lineWords.length - 1; i >= 0; i--) {
-                if (currentTime >= lineWords[i].start) {
+                if (wordTime >= lineWords[i].start) {
                   wordIdx = i;
                   break;
                 }

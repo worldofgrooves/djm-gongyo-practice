@@ -49,6 +49,20 @@ html, body {
   animation: slide-up 0.25s ease;
 }
 
+/* ── Gongyo text sizing ── */
+.gongyo-text {
+  font-size: 19px;
+}
+.gongyo-text-sm .gongyo-text {
+  font-size: 16px;
+}
+.gongyo-text-md .gongyo-text {
+  font-size: 19px;
+}
+.gongyo-text-lg .gongyo-text {
+  font-size: 22px;
+}
+
 /* ── Karaoke word states ── */
 
 /* Upcoming word (not reached yet) */

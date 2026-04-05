@@ -43,12 +43,12 @@ export default function Teleprompter({
   return (
     <div className="bg-white border-b border-paper-deep px-5 py-3 flex-shrink-0 z-10">
       {/* Previous line */}
-      <div className="font-serif text-[15px] text-ink opacity-40 leading-relaxed min-h-[20px]">
+      <div className="font-sans text-[15px] text-ink opacity-40 leading-relaxed min-h-[20px]">
         {prevId ? lineTextById[prevId] : ""}
       </div>
 
       {/* Current line -- word-level */}
-      <div className="font-serif text-[22px] leading-relaxed my-1">
+      <div className="font-sans text-[22px] leading-relaxed my-1">
         {lineWords ? (
           lineWords.map((w, i) => {
             let cls: string;
@@ -75,7 +75,7 @@ export default function Teleprompter({
       </div>
 
       {/* Next line */}
-      <div className="font-serif text-[15px] text-ink opacity-50 leading-relaxed min-h-[20px]">
+      <div className="font-sans text-[15px] text-ink opacity-50 leading-relaxed min-h-[20px]">
         {nextId ? lineTextById[nextId] : ""}
       </div>
     </div>

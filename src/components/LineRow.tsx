@@ -23,7 +23,7 @@ function LineRowInner({
   if (line.type === "title") {
     return (
       <div className="py-1.5 px-5 text-center">
-        <span className="font-serif text-xl font-semibold text-ink tracking-wide">
+        <span className="font-sans text-xl font-semibold text-ink tracking-wide">
           {line.romaji}
         </span>
       </div>
@@ -63,7 +63,7 @@ function LineRowInner({
         }`}
       >
         {isThisLineActive && lineWords ? (
-          <span className="font-serif text-[19px] leading-relaxed tracking-[0.01em]">
+          <span className="font-sans gongyo-text leading-relaxed tracking-[0.01em]">
             {lineWords.map((w, i) => {
               let cls: string;
               if (i === currentWordIdx) {
@@ -90,7 +90,7 @@ function LineRowInner({
           </span>
         ) : (
           <span
-            className={`font-serif text-[19px] leading-relaxed tracking-[0.01em] ${
+            className={`font-sans gongyo-text leading-relaxed tracking-[0.01em] ${
               isPlaying
                 ? "text-lotus italic"
                 : "text-ink"
