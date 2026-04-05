@@ -1,6 +1,6 @@
 // Service Worker for Gongyo Practice PWA
 
-const CACHE_NAME = "gongyo-v2";
+const CACHE_NAME = "gongyo-v3";
 const STATIC_ASSETS = ["/", "/gongyo-solo.mp3"];
 
 // Install: cache core assets

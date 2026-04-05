@@ -21,8 +21,15 @@ function LineRowInner({
   onToggle,
 }: LineRowProps) {
   if (line.type === "title") {
+    // Title lines: show kanji above romaji, centered
+    const titleWords = wordTimestamps[line.id];
     return (
       <div className="py-1.5 px-5 text-center">
+        {titleWords && (
+          <div className="font-sans text-sm text-ink/60 tracking-[0.3em] mb-0.5">
+            {titleWords.map((w) => w.kanji).join(" ")}
+          </div>
+        )}
         <span className="font-sans text-xl font-semibold text-ink tracking-wide">
           {line.romaji}
         </span>
@@ -63,31 +70,60 @@ function LineRowInner({
         }`}
       >
         {isThisLineActive && lineWords ? (
-          <span className="font-sans gongyo-text leading-relaxed tracking-[0.01em]">
-            {lineWords.map((w, i) => {
-              let cls: string;
-              if (i === currentWordIdx) {
-                cls = "word-current";
-              } else if (i < currentWordIdx) {
-                cls = w.multiSyllable ? "word-passed-multi" : "word-passed";
-              } else {
-                // Upcoming -- flag multi-syllable words that are next
-                cls = (w.multiSyllable && i === currentWordIdx + 1)
-                  ? "word-upcoming-multi"
-                  : "word-upcoming";
-              }
+          <div className="font-sans leading-relaxed tracking-[0.01em]">
+            {/* Kanji row -- primary karaoke anchor */}
+            <div className="gongyo-text flex flex-wrap gap-x-1">
+              {lineWords.map((w, i) => {
+                let cls: string;
+                if (i === currentWordIdx) {
+                  cls = "word-current";
+                } else if (i < currentWordIdx) {
+                  cls = w.multiSyllable ? "word-passed-multi" : "word-passed";
+                } else {
+                  cls = (w.multiSyllable && i === currentWordIdx + 1)
+                    ? "word-upcoming-multi"
+                    : "word-upcoming";
+                }
 
-              return (
-                <span key={i} className={`${cls} relative inline-block`}>
-                  {i === currentWordIdx && (
-                    <span className="karaoke-dot" />
-                  )}
-                  {w.word}
-                  {i < lineWords.length - 1 ? " " : ""}
-                </span>
-              );
-            })}
-          </span>
+                return (
+                  <span key={i} className={`${cls} relative inline-block`}>
+                    {i === currentWordIdx && (
+                      <span className="karaoke-dot" />
+                    )}
+                    {w.kanji}
+                  </span>
+                );
+              })}
+            </div>
+            {/* Romaji row -- follows kanji highlighting */}
+            <div className="text-[13px] text-ink/50 mt-0.5 flex flex-wrap gap-x-1">
+              {lineWords.map((w, i) => {
+                let cls: string;
+                if (i === currentWordIdx) {
+                  cls = "text-ink/80 font-medium";
+                } else if (i < currentWordIdx) {
+                  cls = "text-ink/40";
+                } else {
+                  cls = "text-ink/30";
+                }
+                return (
+                  <span key={i} className={cls}>
+                    {w.romaji}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ) : lineWords ? (
+          <div className="font-sans leading-relaxed tracking-[0.01em]">
+            {/* Static kanji + romaji (not playing) */}
+            <div className={`gongyo-text ${isPlaying ? "text-lotus italic" : "text-ink"}`}>
+              {lineWords.map((w) => w.kanji).join(" ")}
+            </div>
+            <div className="text-[13px] text-ink/40 mt-0.5">
+              {line.romaji}
+            </div>
+          </div>
         ) : (
           <span
             className={`font-sans gongyo-text leading-relaxed tracking-[0.01em] ${
